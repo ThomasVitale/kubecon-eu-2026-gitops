@@ -25,11 +25,17 @@ spec:
         name: opentelemetry
         namespace: observability
       interval: 24h
-  install:
-    crds: CreateReplace
-  upgrade:
-    crds: CreateReplace
   values:
+    crds:
+      create: true
     manager:
       collectorImage:
         repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
+      securityContext:
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
