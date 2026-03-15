@@ -2,7 +2,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: observability
+  name: otel-operator
   namespace: kadras-system
 spec:
   interval: 1m
@@ -11,6 +11,25 @@ spec:
   sourceRef:
     kind: GitRepository
     name: gitops-configurer
-  path: ./infrastructure/observability
+  path: ./infrastructure/otel-operator
+  prune: true
+  wait: true
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: otel-collector
+  namespace: kadras-system
+spec:
+  dependsOn:
+    - name: otel-operator
+  interval: 1m
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: gitops-configurer
+  path: ./infrastructure/otel-collector
   prune: true
   wait: true
