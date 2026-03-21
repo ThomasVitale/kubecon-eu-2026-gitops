@@ -4,4 +4,4 @@ kind: Kustomization
 namespace: apps
 
 resources:
-- ../../base/hello
+- ../../base/developers-nightmare
