@@ -1,0 +1,90 @@
+platform:
+  profile: run
+  
+  additional_packages:
+    - cert-manager-webhook-hetzner
+    - crossplane
+    - dependency-track
+    - gitops-configurer
+    - kyverno
+    - metrics-server
+    - opentelemetry-operator
+    - postgresql-operator
+  
+  ingress:
+    domain: <your-domain> # e.g. example.com
+    issuer:
+      type: letsencrypt
+      email: changeme@example.com # Email address for ACME registration and recovery contact
+
+cert_manager:
+  policies:
+    include: false
+  letsencrypt:
+    include: true
+    production: true
+    email: changeme@example.com # Email address for ACME registration and recovery contact
+    challenge:
+      type: dns01
+      dns_provider: hetzner
+      secret:
+        name: hetzner-dns
+        key: api-token
+
+contour:
+  envoy:
+    service:
+      annotations:
+        load-balancer.hetzner.cloud/location: nbg1 # change to your cluster location, if needed
+        load-balancer.hetzner.cloud/name: kadras-devex-lb
+        load-balancer.hetzner.cloud/use-private-ip: "true"
+        load-balancer.hetzner.cloud/http-redirect-https: "true"
+
+dependency_track:
+  system_requirement_check: false
+  api_server:
+    storage:
+      size: 5Gi
+  postgresql:
+    storage:
+      size: 10Gi
+
+flux:
+  policies:
+    include: true
+  optional_components:
+    helm_controller: true
+
+gitops_configurer:
+  type: flux-kustomization
+  git:
+    url: https://github.com/ThomasVitale/kubecon-eu-2026-gitops # you can change this to your own Git repository to store the GitOps configuration for your cluster
+    path: clusters/devex
+
+knative:
+  serving:
+    policies:
+      include: false
+    config:
+      observability:
+        metrics-protocol: "http/protobuf"
+        metrics-endpoint: "http://otel-collector.observability.svc.cluster.local:4318/v1/metrics"
+        request-metrics-protocol: "http/protobuf"
+        request-metrics-endpoint: "otel-collector.observability.svc.cluster.local:4318/v1/metrics"
+        request-metrics-export-interval: 60s
+        tracing-protocol: "http/protobuf"
+        tracing-endpoint: "http://otel-collector.observability.svc.cluster.local:4318/v1/traces"
+        tracing-sampling-rate: "1"
+
+kyverno:
+  core:
+    metrics:
+      type: grpc
+      collector: 
+        endpoint: otel-collector.observability.svc.cluster.local
+        port: 4317
+
+workspace_provisioner:
+  namespaces:
+    - name: apps
+    - name: observability
