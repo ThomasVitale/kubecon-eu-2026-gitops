@@ -8,4 +8,4 @@ resources:
 
 images:
 - name: ghcr.io/thomasvitale/developers-nightmare
-  newTag: 5b8db628b17de5909548bd5c86fe90a516520dba
+  newTag: d958103cffbcfa8fdc14ee3b5894288307e9bad1
