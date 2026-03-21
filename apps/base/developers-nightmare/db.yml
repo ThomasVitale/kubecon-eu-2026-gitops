@@ -2,7 +2,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: postgresql-story
+  name: postgresql-developers-nightmare
   namespace: apps
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18.2
