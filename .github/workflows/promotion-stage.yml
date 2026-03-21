@@ -1,0 +1,64 @@
+name: Promotion Stage
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Application Name'
+        required: true
+        default: 'developers-nightmare'
+        type: string
+      source_env:
+        description: 'Source Environment'
+        required: true
+        default: 'staging'
+        type: string
+      target_env:
+        description: 'Target Environment'
+        required: true
+        default: 'devex'
+        type: string
+  repository_dispatch:
+    types: [app-promotion]
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    name: Promote Application
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from source environment
+        id: extract-version
+        run: |
+          VERSION=$(yq e '.images[] | select(.name == "ghcr.io/thomasvitale/${{ inputs.app_name || github.event.client_payload.app_name }}") | .newTag' apps/${{ inputs.source_env || github.event.client_payload.source_env }}/${{ inputs.app_name || github.event.client_payload.app_name }}/kustomization.yml)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update target environment version
+        run: |
+          cd apps/${{ inputs.target_env || github.event.client_payload.target_env }}/${{ inputs.app_name || github.event.client_payload.app_name }}
+          kustomize edit set image ghcr.io/thomasvitale/${{ inputs.app_name || github.event.client_payload.app_name }}:${{ steps.extract-version.outputs.version }}
+          sed -i "s/ref=.*/ref=${{ steps.extract-version.outputs.version }}/" kustomization.yml
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Promote ${{ inputs.app_name || github.event.client_payload.app_name }} to ${{ inputs.target_env || github.event.client_payload.target_env }}"
+          body: |
+            Promoting ${{ inputs.app_name || github.event.client_payload.app_name }} from ${{ inputs.source_env || github.event.client_payload.source_env }} to ${{ inputs.target_env || github.event.client_payload.target_env }}
+            
+            Version: ${{ steps.extract-version.outputs.version }}
+          commit-message: "Promote ${{ inputs.app_name || github.event.client_payload.app_name }} from ${{ inputs.source_env || github.event.client_payload.source_env }} to ${{ inputs.target_env || github.event.client_payload.target_env }} (version ${{ steps.extract-version.outputs.version }})"
+          branch: promote/${{ inputs.app_name || github.event.client_payload.app_name }}-to-${{ inputs.target_env || github.event.client_payload.target_env }}
+          base: main
+          delete-branch: true

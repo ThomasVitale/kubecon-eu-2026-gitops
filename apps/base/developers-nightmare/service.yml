@@ -13,7 +13,7 @@ spec:
       serviceAccountName: supply-chain
       containers:
         - name: workload
-          image: ghcr.io/thomasvitale/developers-nightmare:c8a9256bed657f6245ef9f4803b6f9144a7dc749
+          image: ghcr.io/thomasvitale/developers-nightmare
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
