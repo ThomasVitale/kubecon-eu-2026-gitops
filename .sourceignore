@@ -1,4 +1,7 @@
-.flox/
+.devenv*
+.direnv/
+.envrc
+devenv.*
 prds/
 scripts/
 slides/

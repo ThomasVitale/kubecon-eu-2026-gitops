@@ -4,7 +4,6 @@ _Presented by Alexandra Hou Aldershaab and Thomas Vitale at KubeCon+CloudNativeC
 
 [Details](https://kccnceu2026.sched.com/event/2CVzp/the-developers-nightmare-how-to-survive-compliance-checklists-and-still-ship-fast-alexandra-hou-aldershaab-eficode-thomas-vitale-systematic)
 
-
 You did it! The new feature you’ve been implementing is now ready and you can’t wait to ship it.
 
 “Not so fast”. Oh no, it’s them: the guardians of compliance! You know what’s about to happen. You’ve been there before.
@@ -21,17 +20,19 @@ You'll follow the mishaps of a developer and learn how to deal with compliance, 
 
 ## Development environment (recommended)
 
-This project uses [Flox](https://flox.dev/) to manage the development and build environment via [Nix](https://nixos.org). After [installing](https://flox.dev/docs/install-flox/install/) the Flox CLI (open-source), activate the environment:
+This project uses [Devenv](https://devenv.sh) to manage the development and build environment via [Nix](https://nixos.org). After [installing](https://devenv.sh/getting-started/) the Devenv CLI (open-source), activate the environment:
 
 ```shell
-flox activate
+devenv shell
 ```
+
+If you use [direnv](https://direnv.net), the environment is activated automatically when you enter the project folder, after allowing it with `direnv allow`.
 
 By doing so, you will have access to all the tools and dependencies needed to provision a Kubernetes cluster, install the Kadras Engineering Platform, and deploy the applications.
 
 ## Platform
 
-This project relies on the Kadras Engineering Platform, an open-source project that provides common platform capabilities for building and operating cloud-native applications. The platform is built on top of Kubernetes and includes components such as Crossplane, Dependency Track, Knative, Contour, OpenTelemetry, and more.
+This project relies on the Kadras Engineering Platform, an open-source project that provides common platform capabilities for building and operating cloud-native applications. The platform is built on top of Kubernetes and includes components such as Crossplane, Dependency Track, Knative, Envoy, OpenTelemetry, and more.
 
 We installed the platform on a Kubernetes cluster hosted at Hetzner, a European cloud provider. You can follow the installation instructions in the [Kadras documentation](https://kadras-io.github.io/kadras-docs/docs/hetzner/installation/) to set up your own instance of the platform.
 
