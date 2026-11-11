@@ -4,13 +4,21 @@ on:
   repository_dispatch:
     types: [app-delivery]
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   update:
     name: Update application version
     runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: write
     env:
@@ -20,16 +28,57 @@ jobs:
       APP_VERSION: ${{ github.event.client_payload.app_version }}
     steps:
       - name: Checkout source code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-      - name: Update image version
+          ref: main
+          persist-credentials: false
+
+      - name: Validate request
         run: |
-          cd apps/${{ env.APP_TARGET }}/${{ env.APP_NAME }}
-          kustomize edit set image ${{ env.APP_IMAGE }}:${{ env.APP_VERSION }}
-          sed -i 's/ref=[\w+]/${{ env.APP_VERSION }}/' kustomization.yml
-      - name: Commit updated manifests
-        uses: stefanzweifel/git-auto-commit-action@04702edda442b2e678b25b537cec683a1493fcb9 # v7.1.0
-        with:
-          commit_message: "Update ${{ env.APP_NAME }} to version ${{ env.APP_VERSION }}"
-          branch: main
+          name_pattern='^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+          tag_pattern='^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$'
+
+          if [[ ! "$APP_TARGET" =~ $name_pattern || "$APP_TARGET" == "base" ]]; then
+            echo "::error::Invalid app_target in the payload."
+            exit 1
+          fi
+          if [[ ! "$APP_NAME" =~ $name_pattern ]]; then
+            echo "::error::Invalid app_name in the payload."
+            exit 1
+          fi
+          if [[ ! "$APP_VERSION" =~ $tag_pattern ]]; then
+            echo "::error::Invalid app_version in the payload: it must be a valid OCI image tag."
+            exit 1
+          fi
+
+          kustomization="apps/${APP_TARGET}/${APP_NAME}/kustomization.yml"
+          if [[ ! -f "$kustomization" ]]; then
+            echo "::error::No kustomization found for the requested application and target."
+            exit 1
+          fi
+          # Only update images already managed by the kustomization.
+          if ! IMAGE="$APP_IMAGE" yq -e '.images[] | select(.name == strenv(IMAGE))' "$kustomization" > /dev/null; then
+            echo "::error::The app_image in the payload isn't managed by the kustomization."
+            exit 1
+          fi
+
+      - name: Update image version
+        working-directory: apps/${{ env.APP_TARGET }}/${{ env.APP_NAME }}
+        run: kustomize edit set image "${APP_IMAGE}:${APP_VERSION}"
+
+      - name: Commit and push updated manifests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add "apps/${APP_TARGET}/${APP_NAME}/kustomization.yml"
+          if git diff --cached --quiet; then
+            echo "The application is already at the requested version."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update ${APP_NAME} to version ${APP_VERSION}"
+
+          gh auth setup-git
+          git push origin HEAD:main

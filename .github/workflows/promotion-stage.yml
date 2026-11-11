@@ -12,53 +12,119 @@ on:
         description: 'Source Environment'
         required: true
         default: 'staging'
-        type: string
+        type: choice
+        options:
+          - staging
+          - devex
       target_env:
         description: 'Target Environment'
         required: true
         default: 'devex'
-        type: string
+        type: choice
+        options:
+          - staging
+          - devex
   repository_dispatch:
     types: [app-promotion]
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   promote:
     name: Promote Application
     runs-on: ubuntu-26.04
+    timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write
+    # The inputs and the payload are untrusted: they're only used via environment variables, and validated before use.
+    env:
+      APP_NAME: ${{ inputs.app_name || github.event.client_payload.app_name }}
+      SOURCE_ENV: ${{ inputs.source_env || github.event.client_payload.source_env }}
+      TARGET_ENV: ${{ inputs.target_env || github.event.client_payload.target_env }}
+      IMAGE_PREFIX: ghcr.io/thomasvitale
     steps:
       - name: Checkout source code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          ref: main
+          persist-credentials: false
+
+      - name: Validate request
+        run: |
+          name_pattern='^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+
+          for value in "$APP_NAME" "$SOURCE_ENV" "$TARGET_ENV"; do
+            if [[ ! "$value" =~ $name_pattern || "$value" == "base" ]]; then
+              echo "::error::Invalid application name or environment."
+              exit 1
+            fi
+          done
+          if [[ "$SOURCE_ENV" == "$TARGET_ENV" ]]; then
+            echo "::error::The source and target environments must be different."
+            exit 1
+          fi
+          for env in "$SOURCE_ENV" "$TARGET_ENV"; do
+            if [[ ! -f "apps/${env}/${APP_NAME}/kustomization.yml" ]]; then
+              echo "::error::No kustomization found for the application in one of the environments."
+              exit 1
+            fi
+          done
 
       - name: Extract version from source environment
         id: extract-version
         run: |
-          VERSION=$(yq e '.images[] | select(.name == "ghcr.io/thomasvitale/${{ inputs.app_name || github.event.client_payload.app_name }}") | .newTag' apps/${{ inputs.source_env || github.event.client_payload.source_env }}/${{ inputs.app_name || github.event.client_payload.app_name }}/kustomization.yml)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          version=$(IMAGE="${IMAGE_PREFIX}/${APP_NAME}" yq -e \
+            '.images[] | select(.name == strenv(IMAGE)) | .newTag' \
+            "apps/${SOURCE_ENV}/${APP_NAME}/kustomization.yml")
+          if [[ ! "$version" =~ ^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$ ]]; then
+            echo "::error::The version in the source environment isn't a valid OCI image tag."
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Update target environment version
-        run: |
-          cd apps/${{ inputs.target_env || github.event.client_payload.target_env }}/${{ inputs.app_name || github.event.client_payload.app_name }}
-          kustomize edit set image ghcr.io/thomasvitale/${{ inputs.app_name || github.event.client_payload.app_name }}:${{ steps.extract-version.outputs.version }}
-          sed -i "s/ref=.*/ref=${{ steps.extract-version.outputs.version }}/" kustomization.yml
+        env:
+          VERSION: ${{ steps.extract-version.outputs.version }}
+        working-directory: apps/${{ env.TARGET_ENV }}/${{ env.APP_NAME }}
+        run: kustomize edit set image "${IMAGE_PREFIX}/${APP_NAME}:${VERSION}"
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Promote ${{ inputs.app_name || github.event.client_payload.app_name }} to ${{ inputs.target_env || github.event.client_payload.target_env }}"
-          body: |
-            Promoting ${{ inputs.app_name || github.event.client_payload.app_name }} from ${{ inputs.source_env || github.event.client_payload.source_env }} to ${{ inputs.target_env || github.event.client_payload.target_env }}
-            
-            Version: ${{ steps.extract-version.outputs.version }}
-          commit-message: "Promote ${{ inputs.app_name || github.event.client_payload.app_name }} from ${{ inputs.source_env || github.event.client_payload.source_env }} to ${{ inputs.target_env || github.event.client_payload.target_env }} (version ${{ steps.extract-version.outputs.version }})"
-          branch: promote/${{ inputs.app_name || github.event.client_payload.app_name }}-to-${{ inputs.target_env || github.event.client_payload.target_env }}
-          base: main
-          delete-branch: true
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.extract-version.outputs.version }}
+        run: |
+          branch="promote/${APP_NAME}-to-${TARGET_ENV}"
+          title="Promote ${APP_NAME} to ${TARGET_ENV}"
+          body="Promoting ${APP_NAME} from ${SOURCE_ENV} to ${TARGET_ENV}
+
+          Version: ${VERSION}"
+
+          git checkout -B "$branch"
+          git add "apps/${TARGET_ENV}/${APP_NAME}/kustomization.yml"
+          if git diff --cached --quiet; then
+            echo "The target environment is already at version ${VERSION}."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Promote ${APP_NAME} from ${SOURCE_ENV} to ${TARGET_ENV} (version ${VERSION})"
+
+          gh auth setup-git
+          git push --force origin "$branch"
+
+          # Update the pull request if one is already open for the branch.
+          if [[ -n "$(gh pr list --head "$branch" --base main --state open --json number --jq '.[].number')" ]]; then
+            gh pr edit "$branch" --title "$title" --body "$body"
+          else
+            gh pr create --head "$branch" --base main --title "$title" --body "$body"
+          fi
