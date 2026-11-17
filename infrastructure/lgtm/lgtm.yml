@@ -1,0 +1,129 @@
+---
+# Grafana LGTM stack (Loki, Grafana, Tempo, Prometheus, Pyroscope) in a single container.
+# Intended for demo/testing purposes only: data is stored in an ephemeral volume with short retention.
+# https://github.com/grafana/docker-otel-lgtm
+apiVersion: v1
+kind: Service
+metadata:
+  name: lgtm
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: lgtm
+spec:
+  selector:
+    app.kubernetes.io/name: lgtm
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lgtm
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: lgtm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lgtm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lgtm
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: lgtm
+          image: docker.io/grafana/otel-lgtm:0.41.0
+          ports:
+            - containerPort: 3000
+            - containerPort: 4317
+            - containerPort: 4318
+          env:
+            # Grafana is exposed publicly, so disable the default anonymous Admin access.
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "false"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-credentials
+                  key: password
+            - name: GF_SERVER_ROOT_URL
+              value: https://grafana.cloud.thomasvitale.dev
+            # Short retention: the stack is only used for live demos.
+            # Loki requires a retention of at least 24h, matching its daily index period.
+            - name: PROMETHEUS_EXTRA_ARGS
+              value: --storage.tsdb.retention.time=1h --storage.tsdb.retention.size=8GB
+            - name: LOKI_EXTRA_ARGS
+              value: -store.retention=24h -compactor.retention-enabled=true -compactor.delete-request-store=filesystem
+            - name: TEMPO_EXTRA_ARGS
+              value: -backend-worker.compaction.block-retention=1h -backend-scheduler.provider.work.compaction.block-retention=1h
+          readinessProbe:
+            exec:
+              command:
+                - cat
+                - /tmp/ready
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "1"
+              memory: 4Gi
+              ephemeral-storage: 20Gi
+            limits:
+              memory: 4Gi
+              ephemeral-storage: 20Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+            # Tempo writes its shutdown marker here, which isn't writable when running as non-root.
+            - name: tempo-shutdown-marker
+              mountPath: /var/tempo
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 20Gi
+        - name: tmp
+          emptyDir: {}
+        - name: tempo-shutdown-marker
+          emptyDir: {}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana
+  namespace: observability
+spec:
+  parentRefs:
+    - name: external
+      namespace: envoy-gateway-system
+      sectionName: https
+  hostnames:
+    - grafana.cloud.thomasvitale.dev
+  rules:
+    - backendRefs:
+        - name: lgtm
+          port: 3000

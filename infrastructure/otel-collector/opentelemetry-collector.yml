@@ -44,31 +44,8 @@ spec:
   mode: deployment
   image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s:0.165.0
   serviceAccount: otel-collector-sa
-  
-  env:
-    - name: GRAFANA_CLOUD_OTLP_ENDPOINT
-      valueFrom:
-        secretKeyRef:
-          name: grafana-cloud-credentials
-          key: GRAFANA_CLOUD_OTLP_ENDPOINT
-    - name: GRAFANA_CLOUD_INSTANCE_ID
-      valueFrom:
-        secretKeyRef:
-          name: grafana-cloud-credentials
-          key: GRAFANA_CLOUD_INSTANCE_ID
-    - name: GRAFANA_CLOUD_API_KEY
-      valueFrom:
-        secretKeyRef:
-          name: grafana-cloud-credentials
-          key: GRAFANA_CLOUD_API_KEY
 
   config:
-    extensions:
-      basicauth/grafana_cloud:
-        client_auth:
-          username: ${env:GRAFANA_CLOUD_INSTANCE_ID}
-          password: ${env:GRAFANA_CLOUD_API_KEY}
-
     receivers:
       otlp:
         protocols:
@@ -78,20 +55,19 @@ spec:
             endpoint: 0.0.0.0:4318
 
     exporters:
-      otlphttp/grafana_cloud:
-        auth:
-          authenticator: basicauth/grafana_cloud
-        endpoint: ${env:GRAFANA_CLOUD_OTLP_ENDPOINT}
+      otlp/lgtm:
+        endpoint: lgtm.observability.svc.cluster.local:4317
+        tls:
+          insecure: true
 
     service:
-      extensions: [basicauth/grafana_cloud]
       pipelines:
         traces:
           receivers: [otlp]
-          exporters: [otlphttp/grafana_cloud]
+          exporters: [otlp/lgtm]
         metrics:
           receivers: [otlp]
-          exporters: [otlphttp/grafana_cloud]
+          exporters: [otlp/lgtm]
         logs:
           receivers: [otlp]
-          exporters: [otlphttp/grafana_cloud]
+          exporters: [otlp/lgtm]
