@@ -60,6 +60,11 @@ spec:
             # Grafana is exposed publicly, so disable the default anonymous Admin access.
             - name: GF_AUTH_ANONYMOUS_ENABLED
               value: "false"
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin-credentials
+                  key: username
             - name: GF_SECURITY_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -67,6 +72,8 @@ spec:
                   key: password
             - name: GF_SERVER_ROOT_URL
               value: https://grafana.cloud.thomasvitale.dev
+            - name: GF_USERS_DEFAULT_THEME
+              value: system
             # Short retention: the stack is only used for live demos.
             # Loki requires a retention of at least 24h, matching its daily index period.
             - name: PROMETHEUS_EXTRA_ARGS
