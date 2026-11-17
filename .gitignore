@@ -50,6 +50,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Kubernetes credentials
+kubeconfig
+
 # Devenv
 .devenv*
 devenv.local.nix
@@ -60,3 +63,6 @@ devenv.local.yaml
 
 # pre-commit
 .pre-commit-config.yaml
+
+cluster.yml
+values-cloud.yml

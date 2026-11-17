@@ -3,6 +3,10 @@ apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
   name: developers-nightmare
+  labels:
+    app.kubernetes.io/name: developers-nightmare
+    app.kadras.io/language: java
+    app.kadras.io/framework: spring-boot
 spec:
   template:
     metadata:
@@ -10,7 +14,6 @@ spec:
         autoscaling.knative.dev/min-scale: "1"
     spec:
       automountServiceAccountToken: false
-      serviceAccountName: supply-chain
       containers:
         - name: workload
           image: ghcr.io/thomasvitale/developers-nightmare
@@ -42,8 +45,8 @@ spec:
               path: /actuator/health/liveness
               port: 8080
               scheme: HTTP
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 1
+            periodSeconds: 1
             timeoutSeconds: 5
           readinessProbe:
             successThreshold: 1
@@ -52,8 +55,8 @@ spec:
               path: /actuator/health/readiness
               port: 8080
               scheme: HTTP
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 1
+            periodSeconds: 5
             timeoutSeconds: 5
           resources:
             requests:
@@ -66,6 +69,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            privileged: false
             runAsNonRoot: true
             runAsUser: 1001
             seccompProfile:
