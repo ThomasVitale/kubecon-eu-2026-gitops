@@ -52,7 +52,7 @@ spec:
         - name: bridge
           # ko replaces this placeholder with the real digest at deploy time.
           # See the Taskfile tasks: task deploy / task resolve.
-          image: ghcr.io/thomasvitale/dt-github-notifier:main
+          image: ghcr.io/thomasvitale/dt-github-notifier:sha256-83b5374484f817fc5c09b5d48e6fd290b180ed6611b55c55c7416088bddad50a
           ports:
             - name: http1     # HTTP/1.1 — matches Go's net/http default server
               containerPort: 8080
