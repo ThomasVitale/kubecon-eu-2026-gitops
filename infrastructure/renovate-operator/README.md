@@ -62,6 +62,7 @@ On GitHub, go to Settings → Developer settings → **Fine-grained tokens** →
   - Issues: Read and write
   - Pull requests: Read and write
   - Workflows: Read and write (required to update GitHub Actions in `.github/workflows`)
+  - Dependabot alerts: Read-only (lets Renovate read vulnerability alerts and raise security updates; also enable Dependabot alerts in each repository under Settings → Advanced Security)
   - Metadata: Read-only (added automatically)
 
 ### 5. Create the namespace and the secrets
