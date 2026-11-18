@@ -21,6 +21,10 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: BPL_JAVA_NMT_ENABLED
+              value: "false"
+            - name: BPL_JVM_THREAD_COUNT
+              value: "50"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://otel-collector.observability.svc.cluster.local:4318"
             - name: SPRING_DATASOURCE_URL
