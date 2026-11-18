@@ -70,6 +70,7 @@ spec:
       defaults:
         adminUsers:
           - ThomasVitale # GitHub login
+          - housa
         # No access without a session: no public dashboard and no public log streaming.
         anonymousRead: false
         anonymousReadLogs: false
