@@ -5,8 +5,6 @@ metadata:
   name: dt-github-notifier
   namespace: kadras-system
 spec:
-  dependsOn:
-    - name: lgtm
   interval: 1m
   retryInterval: 1m
   timeout: 5m
