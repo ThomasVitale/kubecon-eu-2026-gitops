@@ -1,0 +1,60 @@
+# Restricts outbound traffic from dt-github-notifier pods to what the service
+# needs: DNS, the Dependency-Track API server and the GitHub API. If the pod is
+# compromised, it cannot reach other workloads, cloud metadata endpoints or
+# arbitrary hosts on internal networks.
+#
+# This is a starting point to adapt and test in your cluster before relying on
+# it: it is not applied by `task deploy`. Apply it with:
+#   kubectl apply -f deploy/networkpolicy.yaml
+#
+# It requires a CNI plugin that enforces NetworkPolicies. Only egress is
+# restricted: with Knative, inbound requests come through the activator and the
+# ingress gateway rather than directly from Dependency-Track.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dt-github-notifier-egress
+  namespace: dependency-track
+spec:
+  podSelector:
+    matchLabels:
+      serving.knative.dev/service: dt-github-notifier
+  policyTypes:
+    - Egress
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Dependency-Track API server (same namespace). Narrow the podSelector to
+    # the labels of your API server pods.
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+    # GitHub API (HTTPS). Plain NetworkPolicies cannot match host names, so this
+    # allows HTTPS to public addresses only, excluding private ranges and the
+    # link-local range used by cloud metadata endpoints. Use your CNI's FQDN
+    # policies (e.g. Cilium toFQDNs) to restrict it to api.github.com.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+              - 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443

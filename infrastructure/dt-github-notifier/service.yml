@@ -1,0 +1,130 @@
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: dt-github-notifier-secret
+#   namespace: dependency-track
+# type: Opaque
+# Create with:
+#   kubectl create secret generic dt-github-notifier-secret \
+#     --from-literal=github-token=ghp_yourTokenHere \
+#     --from-literal=dt-api-key=yourDTApiKey \
+#     --from-literal=webhook-secret=yourWebhookSigningSecret \
+#     --namespace dependency-track
+# The DT API key needs the read-only VIEW_PORTFOLIO and PORTFOLIO_MANAGEMENT_READ
+# permissions (the latter to read the github/repo project property).
+# The webhook secret must match the signing secret of the DT webhook alert
+# (Dependency-Track 5.2+); generate one with: openssl rand -hex 32
+# Do NOT commit real tokens to git.
+
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: dt-github-notifier
+  namespace: dependency-track
+  labels:
+    # cluster-local makes the Knative Service reachable only inside the cluster.
+    # It will NOT be exposed through the external ingress gateway.
+    # URL will be: http://dt-github-notifier.dependency-track.svc.cluster.local
+    networking.knative.dev/visibility: cluster-local
+spec:
+  template:
+    metadata:
+      annotations:
+        # Scale down to zero when no requests are in flight.
+        autoscaling.knative.dev/min-scale: "0"
+        # Never spin up more than 3 replicas — DT sends one webhook at a time.
+        autoscaling.knative.dev/max-scale: "3"
+        # Use concurrency-based autoscaling; spin up a new pod after 10 in-flight requests.
+        autoscaling.knative.dev/target: "10"
+    spec:
+      # Hard limit on concurrent requests per pod, bounding memory use (each
+      # request may buffer up to 1 MiB). Knative's default, 0, means no limit.
+      containerConcurrency: 10
+      # The service never calls the Kubernetes API, so it needs no token.
+      automountServiceAccountToken: false
+      # Maximum duration of a request. Kept above the 8 s the bridge allows itself
+      # per notification (Dependency-Track waits 10 s for a webhook response), so
+      # Knative never cuts off a request the bridge is still handling.
+      timeoutSeconds: 30
+
+      containers:
+        - name: bridge
+          # ko replaces this placeholder with the real digest at deploy time.
+          # See the Taskfile tasks: task deploy / task resolve.
+          image: ghcr.io/thomasvitale/dt-github-notifier:main
+          ports:
+            - name: http1     # HTTP/1.1 — matches Go's net/http default server
+              containerPort: 8080
+          env:
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dt-github-notifier-secret
+                  key: github-token
+            # The repo is inferred automatically from each DT project's vcs external
+            # reference, project property (group=github name=repo), or PURL.
+            # Set GITHUB_REPO as a fallback for projects that have none of those.
+            - name: GITHUB_REPO
+              value: ""                 # optional fallback, e.g. "myorg/myrepo"
+            # REQUIRED: the repositories issues may be created in (comma-separated,
+            # "*" matches any owner or repository name). Project data can be set by
+            # anyone able to upload a BOM, so this bounds where issues can go.
+            - name: GITHUB_ALLOWED_REPOS
+              value: "ThomasVitale/developers-nightmare"
+            # Optional: the project data trusted to designate a repository, among
+            # vcs, property and purl (default: all). BOM uploads set vcs and purl;
+            # "property" trusts only users with PORTFOLIO_MANAGEMENT.
+            # - name: REPO_SOURCES
+            #   value: "property"
+            - name: DT_BASE_URL
+              # Internal cluster DNS — same namespace as Dependency-Track. Plain HTTP
+              # sends the API key unencrypted inside the cluster: prefer HTTPS or a
+              # service mesh with mTLS.
+              value: "http://dependency-track-api-server.dependency-track.svc.cluster.local:8080"
+            - name: DT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dt-github-notifier-secret
+                  key: dt-api-key
+            # One of debug, info, warn, error (default: info). Logs are JSON on stderr.
+            - name: LOG_LEVEL
+              value: info
+            # Verifies the X-Webhook-Signature header sent by Dependency-Track 5.2+.
+            # Required, unless ALLOW_UNSIGNED_WEBHOOKS=true.
+            - name: DT_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: dt-github-notifier-secret
+                  key: webhook-secret
+            # Keeps the Go heap below the memory limit.
+            - name: GOMEMLIMIT
+              value: "48MiB"
+            - name: ALLOW_PUBLIC_REPOS
+              value: "true"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 20m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 1
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 15

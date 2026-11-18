@@ -2,6 +2,24 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: dt-github-notifier
+  namespace: kadras-system
+spec:
+  dependsOn:
+    - name: lgtm
+  interval: 1m
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: gitops-configurer
+  path: ./infrastructure/dt-github-notifier
+  prune: true
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: lgtm
   namespace: kadras-system
 spec:
