@@ -1,0 +1,75 @@
+# Renovate Operator: runs Renovate on a schedule, with a web UI behind GitHub login.
+# https://github.com/mogenius/renovate-operator
+#
+# The UI is exposed at https://renovate.cloud.thomasvitale.dev. Any GitHub user can sign in,
+# but only the accounts in authorization.defaults.adminUsers see any RenovateJob.
+#
+# The UI login uses a GitHub OAuth App (GitHub → Settings → Developer settings → OAuth Apps)
+# with the callback URL https://renovate.cloud.thomasvitale.dev/auth/callback.
+# Its client secret, and a static session secret so sessions survive pod restarts, live in:
+#   kubectl create secret generic github-oauth-secret \
+#     --from-literal=client-secret=yourOAuthAppClientSecret \
+#     --from-literal=session-secret=$(openssl rand -hex 32) \
+#     --namespace renovate-operator
+# Do NOT commit real secrets to git.
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: renovate-operator
+  namespace: renovate-operator
+spec:
+  interval: 1h
+  url: oci://ghcr.io/mogenius/helm-charts/renovate-operator
+  ref:
+    semver: "6.9.x"
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: renovate-operator
+  namespace: renovate-operator
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: renovate-operator
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    route:
+      enabled: true
+      parentRefs:
+        - name: external
+          namespace: envoy-gateway-system
+          sectionName: https
+      hostnames:
+        - renovate.cloud.thomasvitale.dev
+
+    auth:
+      github:
+        enabled: true
+        clientId: "Ov23lidao5zQowsIJBnf"
+        existingSecret: github-oauth-secret
+        secretKey: client-secret
+        sessionSecretKey: session-secret
+        # TLS terminates at the Gateway, so the auto-detected redirect URL would otherwise be http.
+        redirectScheme: https
+
+    # Any GitHub user can complete the login, but only the accounts listed here see any
+    # RenovateJob: everyone else gets an empty dashboard (jobs answer 404, actions 403).
+    authorization:
+      enabled: true
+      # Don't let the UI write spec.suspend: Flux would revert it on the next sync.
+      suspendFromUI: false
+      defaults:
+        adminUsers:
+          - ThomasVitale # GitHub login
+        # No access without a session: no public dashboard and no public log streaming.
+        anonymousRead: false
+        anonymousReadLogs: false

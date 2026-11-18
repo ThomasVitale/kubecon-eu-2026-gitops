@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: renovate-operator
+  labels:
+    # Both the operator and the Renovate job pods it starts satisfy the restricted profile.
+    pod-security.kubernetes.io/enforce: restricted
