@@ -11,9 +11,18 @@ Flux deploys it through two Kustomizations defined in `clusters/cloud/infrastruc
 
 The UI is exposed at <https://renovate.cloud.thomasvitale.dev> through the `external` gateway and requires a GitHub login.
 
-GitHub login cannot restrict who signs in: any GitHub user can complete the login. Access is enforced afterwards by the operator. Only the accounts listed in `authorization.defaults.adminUsers` (`ThomasVitale`) see the RenovateJobs; everyone else gets an empty dashboard, where jobs answer 404 and actions 403. Anonymous access is disabled, for both the dashboard and the Renovate logs.
+GitHub login cannot restrict who signs in: any GitHub user can complete the login. Access is enforced afterwards by the operator. Only the accounts listed in `authorization.defaults.adminUsers` in `release.yml` see the RenovateJobs; everyone else gets an empty dashboard, where jobs answer 404 and actions 403. Anonymous access is disabled, for both the dashboard and the Renovate logs.
 
 To add someone, add their GitHub login to `adminUsers` (full access) or `readerUsers` (read-only) in `release.yml`.
+
+## Commit identity
+
+Renovate's default commit author, `renovate@whitesourcesoftware.com`, is an account owned by Mend that flags every commit not signed by Mend as `Unverified`. Instead, the `RenovateJob` sets:
+
+- `platformCommit: enabled`: Renovate creates commits through the GitHub API rather than git, so GitHub signs them (`Verified`) and attributes them to the owner of the PAT.
+- `gitAuthor`: the PAT owner's GitHub noreply address, used for any commit Renovate still creates with git.
+
+If the PAT changes owner, update `gitAuthor` to match (`<id>+<login>@users.noreply.github.com`, where the id comes from `https://api.github.com/users/<login>`).
 
 ## Before deploying
 

@@ -27,3 +27,10 @@ spec:
     requests:
       cpu: 100m
       memory: 256Mi
+  renovateConfig:
+    fileName: config.json
+    inline: |
+      {
+        "platformCommit": "enabled",
+        "gitAuthor": "Thomas Vitale <8523418+ThomasVitale@users.noreply.github.com>"
+      }
