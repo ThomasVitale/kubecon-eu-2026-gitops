@@ -17,7 +17,7 @@ spec:
   secretRef: renovate-secret
   provider:
     name: github
-  image: ghcr.io/renovatebot/renovate:43.104.11
+  image: ghcr.io/renovatebot/renovate:44.253.2
   parallelism: 2
   discoveryFilters:
     - ThomasVitale/developers-nightmare
