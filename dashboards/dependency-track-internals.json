@@ -1,0 +1,2385 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "dependency-track-internals"
+  },
+  "spec": {
+    "title": "Dependency-Track Internals",
+    "description": "Dependency-Track API server internals: durable execution engine, JVM, database and caches.",
+    "tags": [
+      "dependency-track"
+    ],
+    "editable": true,
+    "cursorSync": "Crosshair",
+    "liveNow": false,
+    "preload": false,
+    "links": [],
+    "annotations": [],
+    "elements": {
+      "uptime": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Uptime",
+          "description": "Time since the API server started.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max(process_uptime_seconds{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#5794F2",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "s",
+                  "decimals": null,
+                  "noValue": "–"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "heap": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Heap used",
+          "description": "Used JVM heap as a share of the maximum heap.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(jvm_memory_used_bytes{job=\"dependency-track-api-server\",area=\"heap\"}) / sum(jvm_memory_max_bytes{job=\"dependency-track-api-server\",area=\"heap\"} > 0)",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#73BF69",
+                        "value": 0
+                      },
+                      {
+                        "color": "#FF9830",
+                        "value": 0.75
+                      },
+                      {
+                        "color": "#F2495C",
+                        "value": 0.9
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "decimals": 0,
+                  "noValue": "–"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "cpu": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "CPU",
+          "description": "CPU usage of the API server process (share of the available CPUs).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max(process_cpu_usage{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#73BF69",
+                        "value": 0
+                      },
+                      {
+                        "color": "#FF9830",
+                        "value": 0.7
+                      },
+                      {
+                        "color": "#F2495C",
+                        "value": 0.9
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "decimals": 1,
+                  "noValue": "–"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "leader": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Engine leader",
+          "description": "Whether this instance holds the durable execution engine leadership (it schedules tasks).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max(dt_dex_engine_leadership_status{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#FF9830",
+                        "value": 0
+                      },
+                      {
+                        "color": "#73BF69",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "–",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "Follower",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "Leader",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ]
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "backpressure": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Polls skipped",
+          "description": "Task worker polls skipped because of backpressure in the selected time range: workers are saturated.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by () (dt_dex_engine_task_worker_poll_skipped_backpressure_total{job=\"dependency-track-api-server\"})\n  - (sum by () (dt_dex_engine_task_worker_poll_skipped_backpressure_total{job=\"dependency-track-api-server\"} offset $__range) or sum by () (dt_dex_engine_task_worker_poll_skipped_backpressure_total{job=\"dependency-track-api-server\"}) * 0),\n0)",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#73BF69",
+                        "value": 0
+                      },
+                      {
+                        "color": "#FF9830",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "0"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "breakers": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Open circuit breakers",
+          "description": "Circuit breakers currently open or half-open.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(resilience4j_circuitbreaker_state{job=\"dependency-track-api-server\",state=~\"open|half_open|forced_open\"})",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#73BF69",
+                        "value": 0
+                      },
+                      {
+                        "color": "#F2495C",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "0"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "util": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Worker utilization",
+          "description": "Share of each task worker's concurrency slots in use.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max by (name, workerType) (dt_dex_engine_task_worker_concurrency_utilization{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "{{name}} ({{workerType}})",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "percentunit",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "max": 1
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "process": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "Task processing time (p95)",
+          "description": "95th percentile of the time to process a task, by queue.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.95, sum by (le, queueName) (rate(dt_dex_engine_task_worker_process_latency_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "{{queueName}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "scheduled": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Activity tasks scheduled",
+          "description": "Activity tasks scheduled per second, by activity.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum by (activityName) (rate(dt_dex_engine_activity_tasks_scheduled_total{job=\"dependency-track-api-server\"}[$__rate_interval]))",
+                        "legendFormat": "{{activityName}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "ops",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "schedlat": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "Task scheduling latency (p95)",
+          "description": "95th percentile of the time between a task becoming due and being scheduled, by queue.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.95, sum by (le, queueName) (rate(dt_dex_engine_activity_task_scheduling_latency_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "{{queueName}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "B",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.95, sum by (le, queueName) (rate(dt_dex_engine_workflow_task_scheduling_latency_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "workflows/{{queueName}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "flush": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "Event buffer flush time (p95)",
+          "description": "95th percentile of the time to flush each engine event buffer to the database.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.95, sum by (le, buffer) (rate(dt_dex_engine_buffer_flush_latency_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "{{buffer}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "queued": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "Buffered events",
+          "description": "Events waiting in each engine buffer.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max by (buffer) (dt_dex_engine_buffer_items_queued{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "{{buffer}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "short",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "jvmheap": {
+        "kind": "Panel",
+        "spec": {
+          "id": 13,
+          "title": "JVM heap",
+          "description": "Heap memory used, committed and maximum.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(jvm_memory_used_bytes{job=\"dependency-track-api-server\",area=\"heap\"})",
+                        "legendFormat": "Used",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "B",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(jvm_memory_committed_bytes{job=\"dependency-track-api-server\",area=\"heap\"})",
+                        "legendFormat": "Committed",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "C",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(jvm_memory_max_bytes{job=\"dependency-track-api-server\",area=\"heap\"} > 0)",
+                        "legendFormat": "Max",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "bytes",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Used"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#5794F2"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Committed"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#73BF69"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Max"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#F2495C"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "gc": {
+        "kind": "Panel",
+        "spec": {
+          "id": 14,
+          "title": "GC pause time",
+          "description": "Share of time the JVM spends paused for garbage collection, by collector.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum by (gc) (rate(jvm_gc_pause_seconds_sum{job=\"dependency-track-api-server\"}[$__rate_interval]))",
+                        "legendFormat": "{{gc}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "percentunit",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "cpuchart": {
+        "kind": "Panel",
+        "spec": {
+          "id": 15,
+          "title": "CPU usage",
+          "description": "CPU usage of the API server process and of the whole system it runs on.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max(process_cpu_usage{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "Process",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "B",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max(system_cpu_usage{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "System",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "percentunit",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "max": 1
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "pool": {
+        "kind": "Panel",
+        "spec": {
+          "id": 16,
+          "title": "Database connections",
+          "description": "HikariCP connection pool: active, idle and pending connections, and the pool size.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(hikaricp_connections_active{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "Active",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "B",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(hikaricp_connections_idle{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "Idle",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "C",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(hikaricp_connections_pending{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "Pending",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "D",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(hikaricp_connections_max{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "Max",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "short",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "decimals": 0
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Active"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#5794F2"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Idle"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#73BF69"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pending"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#FF9830"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Max"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#F2495C"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "acquire": {
+        "kind": "Panel",
+        "spec": {
+          "id": 17,
+          "title": "Connection acquire time",
+          "description": "Average time to obtain a connection from the pool.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(hikaricp_connections_acquire_seconds_sum{job=\"dependency-track-api-server\"}[$__rate_interval])) / sum(rate(hikaricp_connections_acquire_seconds_count{job=\"dependency-track-api-server\"}[$__rate_interval]))",
+                        "legendFormat": "Average",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "queries": {
+        "kind": "Panel",
+        "spec": {
+          "id": 18,
+          "title": "Slowest queries (p95)",
+          "description": "The 10 database queries with the highest 95th percentile latency.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "topk(10, histogram_quantile(0.95, sum by (le, query) (rate(jdbi_query_latency_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval]))) > 0)",
+                        "legendFormat": "{{query}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "cache": {
+        "kind": "Panel",
+        "spec": {
+          "id": 19,
+          "title": "Cache hit ratio",
+          "description": "Share of cache lookups served from the cache, for caches in use.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum by (cache) (rate(cache_gets_total{job=\"dependency-track-api-server\",result=\"hit\"}[$__rate_interval]))\n/ (sum by (cache) (rate(cache_gets_total{job=\"dependency-track-api-server\"}[$__rate_interval])) > 0)",
+                        "legendFormat": "{{cache}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "percentunit",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "max": 1
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "clientlat": {
+        "kind": "Panel",
+        "spec": {
+          "id": 20,
+          "title": "Outbound HTTP latency (p95)",
+          "description": "95th percentile of the time for calls to external systems, by method.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.95, sum by (le, method) (rate(http_client_requests_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "{{method}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "uptime"
+              },
+              "x": 0,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "heap"
+              },
+              "x": 4,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "cpu"
+              },
+              "x": 8,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "leader"
+              },
+              "x": 12,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "backpressure"
+              },
+              "x": 16,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "breakers"
+              },
+              "x": 20,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "util"
+              },
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "process"
+              },
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "scheduled"
+              },
+              "x": 0,
+              "y": 15,
+              "width": 12,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "schedlat"
+              },
+              "x": 12,
+              "y": 15,
+              "width": 12,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "flush"
+              },
+              "x": 0,
+              "y": 24,
+              "width": 12,
+              "height": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "queued"
+              },
+              "x": 12,
+              "y": 24,
+              "width": 12,
+              "height": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "jvmheap"
+              },
+              "x": 0,
+              "y": 32,
+              "width": 8,
+              "height": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "gc"
+              },
+              "x": 8,
+              "y": 32,
+              "width": 8,
+              "height": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "cpuchart"
+              },
+              "x": 16,
+              "y": 32,
+              "width": 8,
+              "height": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "pool"
+              },
+              "x": 0,
+              "y": 40,
+              "width": 8,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "acquire"
+              },
+              "x": 8,
+              "y": 40,
+              "width": 8,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "queries"
+              },
+              "x": 16,
+              "y": 40,
+              "width": 8,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "cache"
+              },
+              "x": 0,
+              "y": 49,
+              "width": 12,
+              "height": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "clientlat"
+              },
+              "x": 12,
+              "y": 49,
+              "width": 12,
+              "height": 8
+            }
+          }
+        ]
+      }
+    },
+    "timeSettings": {
+      "from": "now-30m",
+      "to": "now",
+      "autoRefresh": "30s",
+      "autoRefreshIntervals": [
+        "10s",
+        "30s",
+        "1m",
+        "5m"
+      ],
+      "timezone": "browser",
+      "fiscalYearStartMonth": 0,
+      "hideTimepicker": false
+    },
+    "variables": [
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "name": "datasource",
+          "label": "Data source",
+          "pluginId": "prometheus",
+          "hide": "hideVariable",
+          "current": {
+            "text": "Prometheus",
+            "value": "prometheus"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true,
+          "options": [],
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

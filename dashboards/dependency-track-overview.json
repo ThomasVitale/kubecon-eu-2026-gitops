@@ -1,0 +1,2110 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "dependency-track-overview"
+  },
+  "spec": {
+    "title": "Dependency-Track",
+    "description": "What Dependency-Track is doing: BOM imports, vulnerability analyses, notifications, scheduled tasks and API traffic.",
+    "tags": [
+      "dependency-track",
+      "supply-chain"
+    ],
+    "editable": true,
+    "cursorSync": "Crosshair",
+    "liveNow": false,
+    "preload": false,
+    "links": [],
+    "annotations": [],
+    "elements": {
+      "status": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Status",
+          "description": "Whether Prometheus can scrape the Dependency-Track API server.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max(up{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#F2495C",
+                        "value": 0
+                      },
+                      {
+                        "color": "#73BF69",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "No data",
+                  "mappings": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "Down",
+                          "index": 0
+                        },
+                        "1": {
+                          "text": "Up",
+                          "index": 1
+                        }
+                      }
+                    }
+                  ]
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "version": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Version",
+          "description": "Version of the Dependency-Track API server.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max by (version) (dt_info{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "{{version}}",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#5794F2",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "–"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "name",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "boms": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "BOMs imported",
+          "description": "BOM uploads processed successfully in the selected time range.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",workflowName=\"import-bom\",status=\"COMPLETED\"})\n  - (sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",workflowName=\"import-bom\",status=\"COMPLETED\"} offset $__range) or sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",workflowName=\"import-bom\",status=\"COMPLETED\"}) * 0),\n0)",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#5794F2",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "0"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "analyses": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Vulnerability analyses",
+          "description": "Project vulnerability analyses completed in the selected time range.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",workflowName=\"vuln-analysis\",status=\"COMPLETED\"})\n  - (sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",workflowName=\"vuln-analysis\",status=\"COMPLETED\"} offset $__range) or sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",workflowName=\"vuln-analysis\",status=\"COMPLETED\"}) * 0),\n0)",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#5794F2",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "0"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "notifications": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Notifications",
+          "description": "Notifications emitted in the selected time range (new vulnerabilities, policy violations, ...).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by () (dt_notifications_emitted_count{job=\"dependency-track-api-server\"})\n  - (sum by () (dt_notifications_emitted_count{job=\"dependency-track-api-server\"} offset $__range) or sum by () (dt_notifications_emitted_count{job=\"dependency-track-api-server\"}) * 0),\n0)",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#B877D9",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "0"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "failed": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Failed workflow runs",
+          "description": "Workflow runs that ended in failure in the selected time range.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"FAILED\"})\n  - (sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"FAILED\"} offset $__range) or sum by () (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"FAILED\"}) * 0),\n0)",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#73BF69",
+                        "value": 0
+                      },
+                      {
+                        "color": "#F2495C",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "noValue": "0"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {},
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "runs": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Workflow runs",
+          "description": "Completed workflow runs per interval, by workflow.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\"})\n  - (sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\"} offset $__interval) or sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\"}) * 0),\n0)",
+                        "legendFormat": "{{workflowName}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {
+                "interval": "1m"
+              },
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "short",
+                  "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 85,
+                    "lineWidth": 1,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "sum"
+                  ],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "workflows": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "Workflows",
+          "description": "Workflow runs in the selected time range.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (workflowName) (dt_dex_engine_runs_total{job=\"dependency-track-api-server\"})\n  - (sum by (workflowName) (dt_dex_engine_runs_total{job=\"dependency-track-api-server\"} offset $__range) or sum by (workflowName) (dt_dex_engine_runs_total{job=\"dependency-track-api-server\"}) * 0),\n0)\nor sum by (workflowName) (dt_dex_engine_runs_total{job=\"dependency-track-api-server\"}) * 0",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "B",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"COMPLETED\"})\n  - (sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"COMPLETED\"} offset $__range) or sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"COMPLETED\"}) * 0),\n0)\nor sum by (workflowName) (dt_dex_engine_runs_total{job=\"dependency-track-api-server\"}) * 0",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "C",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"FAILED\"})\n  - (sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"FAILED\"} offset $__range) or sum by (workflowName) (dt_dex_engine_runs_completed_total{job=\"dependency-track-api-server\",status=\"FAILED\"}) * 0),\n0)\nor sum by (workflowName) (dt_dex_engine_runs_total{job=\"dependency-track-api-server\"}) * 0",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "kind": "merge",
+                  "spec": {
+                    "id": "merge",
+                    "options": {}
+                  }
+                },
+                {
+                  "kind": "organize",
+                  "spec": {
+                    "id": "organize",
+                    "options": {
+                      "excludeByName": {
+                        "Time": true
+                      },
+                      "indexByName": {
+                        "workflowName": 0,
+                        "Value #A": 1,
+                        "Value #B": 2,
+                        "Value #C": 3
+                      },
+                      "renameByName": {
+                        "workflowName": "Workflow",
+                        "Value #A": "Started",
+                        "Value #B": "Completed",
+                        "Value #C": "Failed"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "text"
+                  },
+                  "decimals": 0,
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Started"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Completed"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Failed"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-background",
+                          "mode": "basic"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "transparent",
+                              "value": 0
+                            },
+                            {
+                              "color": "#F2495C",
+                              "value": 1
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "footer": {
+                  "show": false,
+                  "reducer": [
+                    "sum"
+                  ],
+                  "countRows": false,
+                  "fields": ""
+                },
+                "sortBy": [
+                  {
+                    "displayName": "Started",
+                    "desc": true
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "notif": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Notifications",
+          "description": "Notifications emitted per interval, by group.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (group) (dt_notifications_emitted_count{job=\"dependency-track-api-server\"})\n  - (sum by (group) (dt_notifications_emitted_count{job=\"dependency-track-api-server\"} offset $__interval) or sum by (group) (dt_notifications_emitted_count{job=\"dependency-track-api-server\"}) * 0),\n0)",
+                        "legendFormat": "{{group}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {
+                "interval": "1m"
+              },
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "short",
+                  "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 85,
+                    "lineWidth": 1,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "decimals": 0
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "NEW_VULNERABILITY"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#F2495C"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "NEW_VULNERABLE_DEPENDENCY"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#FF9830"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "POLICY_VIOLATION"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#B877D9"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "PROJECT_AUDIT_CHANGE"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#5794F2"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "sum"
+                  ],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "rules": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "Notification rules matched",
+          "description": "Notifications routed to each notification rule (e.g. webhooks, e-mail), per interval.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (ruleName) (dt_notification_router_rules_matched_total{job=\"dependency-track-api-server\"})\n  - (sum by (ruleName) (dt_notification_router_rules_matched_total{job=\"dependency-track-api-server\"} offset $__interval) or sum by (ruleName) (dt_notification_router_rules_matched_total{job=\"dependency-track-api-server\"}) * 0),\n0)",
+                        "legendFormat": "{{ruleName}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {
+                "interval": "1m"
+              },
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "short",
+                  "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 85,
+                    "lineWidth": 1,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0,
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "sum"
+                  ],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "tasks": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "Scheduled tasks",
+          "description": "Recurring tasks run by the task scheduler: vulnerability data mirroring, metrics updates, maintenance and integrations.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max by (task) (dbscheduler_task_last_run_timestamp_seconds{job=\"dependency-track-api-server\"}) * 1000",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "B",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "max by (task) (dbscheduler_task_last_run_duration{job=\"dependency-track-api-server\"})",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "C",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\",result=\"ok\"})\n  - (sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\",result=\"ok\"} offset $__range) or sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\",result=\"ok\"}) * 0),\n0)\nor sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\"}) * 0",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "D",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "clamp_min(\n  sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\",result=\"failed\"})\n  - (sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\",result=\"failed\"} offset $__range) or sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\",result=\"failed\"}) * 0),\n0)\nor sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\"}) * 0",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "E",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum by (task) (dbscheduler_task_completions_total{job=\"dependency-track-api-server\",result=\"failed\"})",
+                        "legendFormat": "",
+                        "instant": true,
+                        "range": false,
+                        "format": "table"
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "kind": "merge",
+                  "spec": {
+                    "id": "merge",
+                    "options": {}
+                  }
+                },
+                {
+                  "kind": "organize",
+                  "spec": {
+                    "id": "organize",
+                    "options": {
+                      "excludeByName": {
+                        "Time": true
+                      },
+                      "indexByName": {
+                        "task": 0,
+                        "Value #A": 1,
+                        "Value #B": 2,
+                        "Value #C": 3,
+                        "Value #D": 4,
+                        "Value #E": 5
+                      },
+                      "renameByName": {
+                        "task": "Task",
+                        "Value #A": "Last run",
+                        "Value #B": "Last duration",
+                        "Value #C": "Succeeded",
+                        "Value #D": "Failed",
+                        "Value #E": "Failed since start"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "text"
+                  },
+                  "decimals": 0,
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Last run"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeFromNow"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Last duration"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Succeeded"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Failed"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-background",
+                          "mode": "basic"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "transparent",
+                              "value": 0
+                            },
+                            {
+                              "color": "#F2495C",
+                              "value": 1
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Failed since start"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 150
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "text",
+                              "value": 0
+                            },
+                            {
+                              "color": "#FF9830",
+                              "value": 1
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "footer": {
+                  "show": false,
+                  "reducer": [
+                    "sum"
+                  ],
+                  "countRows": false,
+                  "fields": ""
+                },
+                "sortBy": [
+                  {
+                    "displayName": "Failed",
+                    "desc": true
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "api": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "API requests",
+          "description": "Requests served by the REST API, per second, by outcome.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum by (outcome) (rate(http_server_requests_seconds_count{job=\"dependency-track-api-server\"}[$__rate_interval]))",
+                        "legendFormat": "{{outcome}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "reqps",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "SUCCESS"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#73BF69"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "CLIENT_ERROR"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#FF9830"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "SERVER_ERROR"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#F2495C"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "apilat": {
+        "kind": "Panel",
+        "spec": {
+          "id": 13,
+          "title": "API latency",
+          "description": "REST API response time percentiles.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "p50",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "B",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "p95",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "C",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"dependency-track-api-server\"}[$__rate_interval])))",
+                        "legendFormat": "p99",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "s",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "client": {
+        "kind": "Panel",
+        "spec": {
+          "id": 14,
+          "title": "Outbound HTTP calls",
+          "description": "Calls Dependency-Track makes to external systems (vulnerability sources, package registries, webhooks), per second, by outcome.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "refId": "A",
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${datasource}"
+                      },
+                      "spec": {
+                        "expr": "sum by (outcome) (rate(http_client_requests_seconds_count{job=\"dependency-track-api-server\"}[$__rate_interval]))",
+                        "legendFormat": "{{outcome}}",
+                        "instant": false,
+                        "range": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.3.0",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "unit": "reqps",
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "lineWidth": 2,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.8,
+                    "gradientMode": "none",
+                    "showPoints": "never",
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "min": 0
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "SUCCESS"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#73BF69"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "REDIRECTION"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#5794F2"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "CLIENT_ERROR"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#FF9830"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "SERVER_ERROR"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#F2495C"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc",
+                  "hideZeros": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "status"
+              },
+              "x": 0,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "version"
+              },
+              "x": 4,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "boms"
+              },
+              "x": 8,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "analyses"
+              },
+              "x": 12,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "notifications"
+              },
+              "x": 16,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "failed"
+              },
+              "x": 20,
+              "y": 0,
+              "width": 4,
+              "height": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "runs"
+              },
+              "x": 0,
+              "y": 6,
+              "width": 14,
+              "height": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "workflows"
+              },
+              "x": 14,
+              "y": 6,
+              "width": 10,
+              "height": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "notif"
+              },
+              "x": 0,
+              "y": 16,
+              "width": 12,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "rules"
+              },
+              "x": 12,
+              "y": 16,
+              "width": 12,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "tasks"
+              },
+              "x": 0,
+              "y": 25,
+              "width": 24,
+              "height": 11
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "api"
+              },
+              "x": 0,
+              "y": 36,
+              "width": 8,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "apilat"
+              },
+              "x": 8,
+              "y": 36,
+              "width": 8,
+              "height": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "client"
+              },
+              "x": 16,
+              "y": 36,
+              "width": 8,
+              "height": 9
+            }
+          }
+        ]
+      }
+    },
+    "timeSettings": {
+      "from": "now-30m",
+      "to": "now",
+      "autoRefresh": "30s",
+      "autoRefreshIntervals": [
+        "10s",
+        "30s",
+        "1m",
+        "5m"
+      ],
+      "timezone": "browser",
+      "fiscalYearStartMonth": 0,
+      "hideTimepicker": false
+    },
+    "variables": [
+      {
+        "kind": "DatasourceVariable",
+        "spec": {
+          "name": "datasource",
+          "label": "Data source",
+          "pluginId": "prometheus",
+          "hide": "hideVariable",
+          "current": {
+            "text": "Prometheus",
+            "value": "prometheus"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true,
+          "options": [],
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
