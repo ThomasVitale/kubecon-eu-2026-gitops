@@ -54,6 +54,29 @@ spec:
           http:
             endpoint: 0.0.0.0:4318
 
+      # Dependency-Track only exposes metrics in Prometheus format, on the management port.
+      # https://dependencytrack.github.io/docs/next/guides/administration/configuring-observability/
+      prometheus/dependency-track:
+        config:
+          scrape_configs:
+            - job_name: dependency-track-api-server
+              scrape_interval: 15s
+              kubernetes_sd_configs:
+                - role: pod
+                  namespaces:
+                    names: [dependency-track]
+              relabel_configs:
+                - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+                  regex: dependency-track-api-server
+                  action: keep
+                - source_labels: [__meta_kubernetes_pod_container_port_name]
+                  regex: management
+                  action: keep
+                - source_labels: [__meta_kubernetes_namespace]
+                  target_label: namespace
+                - source_labels: [__meta_kubernetes_pod_name]
+                  target_label: pod
+
     exporters:
       otlp/lgtm:
         endpoint: lgtm.observability.svc.cluster.local:4317
@@ -66,7 +89,7 @@ spec:
           receivers: [otlp]
           exporters: [otlp/lgtm]
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, prometheus/dependency-track]
           exporters: [otlp/lgtm]
         logs:
           receivers: [otlp]
